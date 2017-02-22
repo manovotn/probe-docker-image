@@ -25,9 +25,10 @@ USER jboss
 # Set the JAVA_HOME variable to make it clear where Java is located 
 ENV JAVA_HOME /usr/lib/jvm/java
 
-# Set the WILDFLY_VERSION env variable
+# Set the WILDFLY_VERSION && WELD_VERSION env variable
 ENV WILDFLY_VERSION 10.1.0.Final
 ENV WILDFLY_SHA1 9ee3c0255e2e6007d502223916cefad2a1a5e333
+ENV WELD_VERSION 2.4.2.SP1
 ENV JBOSS_HOME /opt/jboss/wildfly
 
 USER root
@@ -52,13 +53,19 @@ USER jboss
 EXPOSE 8080
 EXPOSE 9990
 
-#Obtain weld-numberguess WAR
-RUN wget https://repo1.maven.org/maven2/org/jboss/weld/examples/jsf/weld-jsf-numberguess/2.4.2.SP1/weld-jsf-numberguess-2.4.2.SP1.war -O weld-numberguess.war
+# Obtain patch for WildFly
+RUN wget http://download.jboss.org/weld/$WELD_VERSION/wildfly-$WILDFLY_VERSION-weld-$WELD_VERSION-patch.zip -O wildfly-patch.zip
 
-#Copy to WildFly deployments
+# Apply patch
+RUN $JBOSS_HOME/bin/jboss-cli.sh --command="patch apply wildfly-patch.zip"
+
+# Obtain weld-numberguess WAR
+RUN wget https://repo1.maven.org/maven2/org/jboss/weld/examples/jsf/weld-jsf-numberguess/$WELD_VERSION/weld-jsf-numberguess-$WELD_VERSION.war -O weld-numberguess.war
+
+# Copy numberguess to WildFly deployments
 RUN cp weld-numberguess.war wildfly/standalone/deployments/
 
-# Now, we try to change user ID in order to trick
+# Now, we try to change user ID in order to trick OpenShift and get sufficient rights to execute WFLY
 USER root
 RUN sed -i 's/1000/1052340000/g' /etc/passwd
 USER jboss
