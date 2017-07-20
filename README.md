@@ -16,3 +16,15 @@ Update process:
 * Edit WILDFLY\_VERSION and WILDFLY\_SHA1 if WildFly is to be updated
 * Build the image, tag it and push in Docker Hub
 * This should automatically propagate into OpenShift and deploy
+
+
+
+Creation of OpenShift application:
+ - obviously, use the image from Docker but once you are done creating that, OS will not update your app upon pushing new image
+ - in order to achieve that automatically, you need to go into Builds -> Images -> <nameOfYourImage> -> Actions -> Edit YAML
+ - There you will want to look for `importPolicy: { }` line and replace it with the following:
+`      importPolicy:`
+`        scheduled: true`
+
+That should convince OS to periodically check new images from docker and upload them to their internal repository.
+From there the build should be trigger automatically.
